@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-Pilot Studio with Direct Line</title>
+    <!-- Import Bot Framework Web Chat styling and script -->
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #webchat-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        #webchat {
+            height: 100%;
+            border: 1px solid #ccc;
+        }
+        /* Basic styling, Web Chat is highly customizable */
+    </style>
+</head>
+<body>
+    <div id="webchat-container">
+        <h1>My Custom Bot Client</h1>
+        <div id="webchat" role="main"></div>
+    </div>
+
+    <script>
+        (async function () {
+            // --- Configuration ---
+            const directLineTokenEndpoint = 'http://localhost:3001/api/directline/token'; // Your backend endpoint
+
+            // --- Fetch Direct Line Token from your backend ---
+            let directLineToken;
+            let conversationId;
+            try {
+                console.log("Requesting Direct Line token from backend...");
+                const response = await fetch(directLineTokenEndpoint, { method: 'POST' });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Failed to fetch Direct Line token: ${response.status} ${errorData.error || response.statusText}`);
+                }
+                const data = await response.json();
+                directLineToken = data.token;
+                conversationId = data.conversationId; // You can use this to resume conversations
+                console.log("Direct Line token received:", directLineToken ? 'OK' : 'NOT OK');
+                console.log("Conversation ID:", conversationId);
+
+            } catch (error) {
+                console.error('Error initializing chat:', error);
+                document.getElementById('webchat').innerHTML = `<p style="color: red; padding: 10px;">Error initializing chat: ${error.message}. Check console for details.</p>`;
+                return;
+            }
+
+            if (!directLineToken) {
+                 document.getElementById('webchat').innerHTML = `<p style="color: red; padding: 10px;">Could not retrieve Direct Line token. Backend might be down or misconfigured.</p>`;
+                return;
+            }
+
+            // --- Initialize Bot Framework Web Chat ---
+            const store = window.WebChat.createStore(
+                {}, // initial state
+                ({ dispatch }) => next => action => {
+                    if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
+                        console.log("Web Chat connected to Direct Line.");
+                        // You can dispatch a welcome event if your bot supports it
+                        /*
+                        dispatch({
+                            type: 'WEB_CHAT/SEND_EVENT',
+                            payload: {
+                                name: 'webchat/join',
+                                value: { language: window.navigator.language }
+                            }
+                        });
+                        */
+                    } else if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
+                        // Log incoming activities from the bot
+                        // console.log('Incoming activity:', action.payload.activity);
+                        if (action.payload.activity.name === 'adaptiveCardAction') {
+                            console.log('Adaptive Card Action:', action.payload.activity.value);
+                            // Here you might handle specific card actions if needed,
+                            // though Web Chat typically handles standard submit actions.
+                        }
+                    }
+
+                    // Handle OAuthCard for bot user authentication
+                    // Co-Pilot Studio will send an OAuthCard when "Authentication" is turned on for a topic
+                    // and the bot needs the user to sign in.
+                    if (action.type === 'WEB_CHAT/SEND_POST_BACK' && action.payload.value && action.payload.value.type === 'signin') {
+                        // This is a simplistic way to handle it.
+                        // For production, you'd use a proper OAuth library like MSAL.js
+                        // and a more robust popup or redirect mechanism.
+                        console.log("Sign-in action initiated by user:", action.payload.value);
+                        const signInUrl = action.payload.value.value; // The URL from the OAuthCard
+                        if (signInUrl) {
+                            // Open a popup for sign-in. Your bot needs to handle the token exchange.
+                            // This part is complex and depends on your OAuth provider and bot setup.
+                            // After successful sign-in and token exchange, the bot will get the user's token.
+                            // Web Chat usually handles the magic value exchange if the bot is configured correctly.
+                            const DLAUTHWIN = window.open(signInUrl, "SharePoint Sign In", "width=1024, height=700");
+                            const timer = setInterval(function() {
+                                if(DLAUTHWIN.closed) {
+                                    clearInterval(timer);
+                                    // The user might have closed the window or completed sign-in.
+                                    // The bot should automatically receive the token if the flow was successful.
+                                    // You might want to send a message to the bot to check if auth succeeded.
+                                    console.log("Sign-in window closed.");
+                                }
+                            }, 1000);
+                        }
+                        // IMPORTANT: Prevent Web Chat from sending the sign-in card data as a regular postback
+                        return false; // Suppress the original postBack action
+                    }
+
+
+                    return next(action);
+                }
+            );
+
+            window.WebChat.renderWebChat(
+                {
+                    directLine: window.WebChat.createDirectLine({
+                        token: directLineToken,
+                        // conversationId: conversationId, // Optional: if you want to try and resume
+                        // domain: 'https://your.directline.domain' // Only if using a regional Direct Line endpoint
+                    }),
+                    store: store,
+                    userID: 'YourCustomUserID_Optional', // You can set a user ID
+                    username: 'User', // Optional username
+                    locale: 'en-US',
+                    // --- Style Options (Highly Customizable) ---
+                    styleOptions: {
+                        botAvatarInitials: 'CP',
+                        userAvatarInitials: 'U',
+                        // Many more options: https://github.com/microsoft/BotFramework-WebChat/blob/main/packages/api/src/defaultStyleOptions.ts
+                        bubbleBackground: '#f0f0f0',
+                        bubbleFromUserBackground: '#d1eaff',
+                        suggestedActionBackground: 'white',
+                        suggestedActionBorderRadius: '5px',
+                        suggestedActionTextColor: 'black',
+                    }
+                },
+                document.getElementById('webchat')
+            );
+            console.log("Web Chat rendering initiated.");
+
+        })().catch(err => console.error("Unhandled error in async init:", err));
+    </script>
+</body>
+</html>
