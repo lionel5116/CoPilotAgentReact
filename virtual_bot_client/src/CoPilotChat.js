@@ -5,7 +5,12 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 // You would typically include this in your public/index.html
 // <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
 
-const DIRECT_LINE_TOKEN_ENDPOINT = 'http://localhost:3001/api/directline/token'; // Your backend endpoint
+
+/*using node server */
+//const DIRECT_LINE_TOKEN_ENDPOINT = 'http://localhost:3001/api/directline/token'; // Your backend endpoint
+
+/*usig web api */
+const DIRECT_LINE_TOKEN_ENDPOINT = 'http://localhost:53833/api/directline/token'; // Your backend endpoint
 
 const CoPilotChat = ({ userId = 'YourCustomUserID_React', userName = 'React User' }) => {
     const [directLineToken, setDirectLineToken] = useState(null);

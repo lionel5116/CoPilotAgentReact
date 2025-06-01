@@ -9,7 +9,7 @@ const SimpleBotChat = () => {
   const messagesEndRef = useRef(null);
   
   // Hardcoded Direct Line secret
-  const DIRECTLINE_SECRET = 'EBphEbDOY462O2N6J0B43S6MBzWrCliXIprzaetbdNvE3WLcqD9eJQQJ99BEACHYHv6AArohAAABAZBSThGE.CEwyGmrOoEFvlBmBWwxr9N7kAqQiBg0O36GWbsgMk5f9bMbhWlCyJQQJ99BEACHYHv6AArohAAABAZBS3vUX';
+  const DIRECTLINE_SECRET = 'EBphEbDOY462O2N6J0B43S6MBzWrCliXIprzaetbdNvE3WLcqD9eJQQJ99BEACHYHv6AArohAAABAZBSThGE.BmP3BWfELvI1XgQMj8nR2R4JWyMyBg6gCm1wvKvVRcRjIKHNVP8bJQQJ99BEACHYHv6AArohAAABAZBS21pj';
   const DIRECTLINE_ENDPOINT = 'https://directline.botframework.com/v3/directline';
 
   const scrollToBottom = () => {
